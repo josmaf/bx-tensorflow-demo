@@ -8,9 +8,9 @@ import os.path
 def train(input_file_path, num_epochs, output_folder):
 
     # Read data
-    data = np.load(input_file_path)
+    data = np.load(input_file_path, allow_pickle=True)
     train_images = data['x_train']
-    train_labels = data['y_train']
+    train_labels =data['y_train']
     test_images = data['x_test']
     test_labels = data['y_test']
 
