@@ -1,18 +1,19 @@
-# Build image
-docker build -f ./docker/Dockerfile josemfer/batchx-demo-tensorflow:latest .
+# Build Docker image
+docker build -f ./docker/Dockerfile -t josemfer/batchx-tensorflow-gpu-demo:latest .
+
+# Run Docker image
+docker run -v /batchx/input:/batchx/input -v /batchx/output:/batchx/output josemfer/batchx-tensorflow-gpu-demo:latest
 
 # Import into Batchx
-bx import josemfer/batchx-demo-tensorflow:latest
+bx import josemfer/batchx-tensorflow-gpu-demo:latest
 
 # Run in BX
-bx run -g=1 tutorial/demo-tensorflow-gpu:1.0.0 '{}'
 
-# LABEL requirements to use GPU
+## Copy training data into BatchX file fystem
+bx cp ...
 
-Add: "runtime\":{"minMem":1000, "gpus\" : "required|supported"}
-
-    - required: using "g" parameter with bx cliente is mandatory
-    - supported: using "g" parameter with bx client is optional 
+## Run image
+bx run -g=1 tutorial/tensorflow-gpu-demo:0.0.1 '{"data_file_path": "", "num_epochs": 2}'
 
 
 

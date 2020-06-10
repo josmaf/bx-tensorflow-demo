@@ -19,7 +19,7 @@ def train(input_file_path, num_epochs, output_folder):
     test_images = test_images / 255.0
 
     # Force using first GPU device
-    with tf.device('/cpu:0'):
+    with tf.device('/gpu:0'):
 
         # Build the model
         model = keras.Sequential([
