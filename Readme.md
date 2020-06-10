@@ -9,11 +9,11 @@ bx import josemfer/batchx-tensorflow-gpu-demo:latest
 
 # Run in BX
 
-## Copy training data into BatchX file fystem
-bx cp ...
+## Copy training data into BatchX file system
+bx cp fashion-mnist.npz bx://data/fashion-mnist.npz
 
 ## Run image
-bx run -g=1 tutorial/tensorflow-gpu-demo:0.0.1 '{"data_file_path": "", "num_epochs": 2}'
+bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:0.0.2 '{"data_file_path": "bx://data/fashion_mnist.npz", "num_epochs": 4}'
 
 
 
