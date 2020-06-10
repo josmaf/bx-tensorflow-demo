@@ -7,7 +7,7 @@ In this tutorial you will learn how to:
 3. Run the image in BatchX
 4. Get results back
 
-# Requisites
+# Prerequisites
 
 1. BatchX client and a BatchX working account
 2. Docker client and a public Docker registry account. For instance, https://hub.docker.com/
@@ -17,6 +17,69 @@ In this tutorial you will learn how to:
 We'll create three files: 
 
 1. Dockerfile : Docker image definition
+
+```
+FROM tensorflow/tensorflow:latest-gpu-py3
+WORKDIR /batchx
+COPY . .
+RUN chmod -R +x /batchx 
+ENTRYPOINT python3 /batchx/entrypoint.py
+LABEL 'io.batchx.manifest-03'='{ \
+	"name":"tutorial/tensorflow-gpu-demo", \
+	"title":"BatchX Tensorflow GPU Demo Image", \
+	"schema":{  \
+		"input":{ \
+			"$schema":"http://json-schema.org/draft-07/schema#", \
+			"type":"object", \
+			"properties":{ \
+				"data_file_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Input data file path" \
+					}, \
+				"num_epochs":{ \
+					"type":"integer", \
+					"required":true, \
+					"description":"Number of epochs" \
+					} \
+				} \
+			}, \
+		"output":{ \
+			"$schema":"http://json-schema.org/draft-07/schema#", \
+			"type":"object", \
+			"additionalProperties":false, \
+			"properties":{ \
+				"model_file_path":{ \
+					"required":true, \
+					"type":"string", \
+					"format":"file", \
+					"description":"Tensorflow HDF5 model file path" \
+					}, \
+				"meta_file_path":{ \
+					"required":true, \
+					"type":"string", \
+					"format":"file", \
+					"description":"Meta-data file path" \
+					}, \
+				"predictor_file_path" : { \
+					"required":true, \
+					"type":"string", \
+					"format":"file", \
+					"description":"Predictor script file path" \
+					} \
+				} \
+			} \
+		}, \
+	"author":"BatchX", \
+	"version":"0.0.5", \
+	"runtime":{"minMem":8000, \
+				"gpus":"required" \
+			} \
+	}'
+```
+
+
 2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
 3. trainer.py : script to train the model
 
