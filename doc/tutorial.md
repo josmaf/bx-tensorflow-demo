@@ -3,18 +3,26 @@
 In this tutorial you will learn how to:
 
 1. Create a Docker image to train a neural network that classifies images of clothing
-2. Import the image and a dataset of labeled images into BatchX
+2. Import the image and a dataset of training data (clothing photos) into BatchX
 3. Run the image in BatchX
 4. Get results back
 
 # Requisites
 
-BatchX client & a BatchX working account
-Docker client & a public Docker registry account. For instance, https://hub.docker.com/
+1. BatchX client and a BatchX working account
+2. Docker client and a public Docker registry account. For instance, https://hub.docker.com/
 
 # 1. Docker image creation
 
-TODO: add steps to build the Docker image
+We'll create three files: 
+
+1. Dockerfile : Docker image definition
+2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
+3. trainer.py : script to train the model
+
+TODO: more
+
+
 
 Build image:
 
