@@ -4,8 +4,8 @@ In this tutorial you'll learn how to:
 
 1. Create a Docker image to train a neural network that classifies images of clothing
 2. Import the image and a dataset of training data (labeled clothing photos) into BatchX
-3. Run the image in BatchX
-4. Get results back
+3. Run your BatchX image
+4. Get results
 
 # Prerequisites
 
@@ -72,7 +72,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 			} \
 		}, \
 	"author":"BatchX", \
-	"version":"0.0.5", \
+	"version":"1.0.0", \
 	"runtime":{"minMem":8000, \
 				"gpus":"required" \
 			} \
@@ -81,6 +81,8 @@ LABEL 'io.batchx.manifest-03'='{ \
 
 
 2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
+
+It will read input parameters and pass them to trainer module.
 
 ```
 import json
@@ -177,25 +179,27 @@ def train(input_file_path, num_epochs, output_folder):
 
 Build image:
 
-> docker build -f ./Dockerfile -t josemfer/batchx-tensorflow-gpu-demo:latest .
+> docker build -f ./Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
+
+Please note: you must change <docker_registry_username> by your Docker registry user name. 
 
 Push to your Docker registry:
 
-> docker push josemfer/batchx-tensorflow-gpu-demo:latest
+> docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
 
-Please note: we're using a public registry, but a private one could also be used instead.
+Note: we're using a public registry, but a private one could be used instead.
 
-# 2. Import to BatchX all you need: Docker image & data
+# 2. Import to BatchX all you need: Docker image & Data
 
 Import image:
 
-> bx import josemfer/batchx-tensorflow-gpu-demo:latest
+> bx import <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
 
 See your imported image:
 
 > bx images
 
-There should be an image named: tutorial/tensorflow-gpu-demo:0.0.1
+There should be an image named: tutorial/tensorflow-gpu-demo:1.0.0
 
 Download data:
 
@@ -205,7 +209,7 @@ Copy data to BatchX file system:
 
 > bx cp fashion_mnist.npz bx://data/fashion_mnist/mnist.npz
 
-# Run your BatchX image
+# 3. Run your BatchX image
 
 > bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:0.0.2 '{"data_file_path":"bx://data/fashion_mnist.npz","num_epochs": 10}'
 
@@ -214,3 +218,25 @@ Parameters:
 - m=15000 -> 15 GB of RAM
 - g=1     -> At least 1 GPU
 - f=T4    -> GPU type
+
+If everything went ok, you should see something like:
+
+> [batchx] [2020/06/10 15:24:59] Job status: SUCCEEDED
+> {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
+
+
+# 4. Get results
+
+Copy model binary file from BatchX to your local filesystem:
+
+> bx cp bx://jobs/127/output/model.h5 .
+
+Copy model meta-data file and predictor.py script:
+
+> bx cp bx://jobs/127/output/model.info .
+> bx cp bx://jobs/127/output/predictor.py .
+
+You can test the model by downloading an input image and trying predictor.py script along with the generated model:
+
+TODO
+
