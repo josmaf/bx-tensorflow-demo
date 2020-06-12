@@ -69,7 +69,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 			} \
 		}, \
 	"author":"BatchX", \
-	"version":"0.0.6", \
+	"version":"0.0.7", \
 	"runtime":{"minMem":8000, \
 				"gpus":"required" \
 			} \
