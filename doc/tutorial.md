@@ -232,8 +232,11 @@ Our dataset consists of 4 files:
 You can download them to your local folder:
 
 > wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_images.zip'
+
 > wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_labels.csv'
+
 > wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_images.zip'
+
 > wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_labels.csv'
 
 And then copy them to BatchX file system:
@@ -296,8 +299,7 @@ You can test the model by downloading an input image:
 Input image:
 
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png"
-     alt="Training image"
-     style="width:300px; height:340px"/>
+     alt="Training image"/>
 
 And then running the predictor.py script, supposing you have a Python environment with Tensorflow > 2.0.
 
