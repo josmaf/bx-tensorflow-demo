@@ -1,7 +1,7 @@
 FROM tensorflow/tensorflow:latest-gpu-py3
 WORKDIR /batchx
 COPY . .
-RUN chmod -R +x /batchx 
+RUN chmod -R +x /batchx  && pip3 install imageio==2.8.0 && pip3 install pandas==1.0.4
 ENTRYPOINT python3 /batchx/entrypoint.py
 LABEL 'io.batchx.manifest-03'='{ \
 	"name":"tutorial/tensorflow-gpu-demo", \
