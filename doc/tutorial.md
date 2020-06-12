@@ -2,11 +2,11 @@
 
 In this tutorial you'll learn how to:
 
-1. Create a Docker image to train a neural network that classifies images of clothing
+1. Create a Docker image to train a neural network that classifies photos of clothing
 2. Import the Docker image into BatchX 
 3. Import a dataset of labeled clothing photos into BatchX
 4. Run your BatchX image (namely, the Docker image you've already imported in step 2)
-5. Get results
+5. Get the trained model from BatchX file system and use it to classify a photo
 
 # Prerequisites
 
@@ -253,7 +253,13 @@ TODO: put images here
 
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/0.png"
      alt="Training image"
-     style="width:56px; height:56px"/>
+     style="width:72px; height:72px"/>
+
+Or
+
+<img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/1.png"
+     alt="Training image"
+     style="width:72px; height:72px"/>
 
 # 4. Run your BatchX image
 
@@ -286,6 +292,12 @@ Copy model meta-data file and predictor.py script:
 You can test the model by downloading an input image:
 
 > wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png'
+
+Input image:
+
+<img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png"
+     alt="Training image"
+     style="width:300px; height:340px"/>
 
 And then running the predictor.py script, supposing you have a Python environment with Tensorflow > 2.0.
 
