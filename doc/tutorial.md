@@ -253,7 +253,7 @@ TODO: put images here
 
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/0.png"
      alt="Training image"
-     style="width=56 height=56"/>
+     style="width:56px; height:56px"/>
 
 # 4. Run your BatchX image
 
