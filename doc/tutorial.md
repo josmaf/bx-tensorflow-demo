@@ -17,7 +17,7 @@ In this tutorial you'll learn how to:
 
 We'll have to write three files: 
 
-1. Dockerfile : Docker image definition
+1. **Dockerfile** : Docker image definition
 
 ```text
 FROM tensorflow/tensorflow:latest-gpu-py3
@@ -98,7 +98,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 	}'
 ```
 
-2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
+2. **entrypoint.py** : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
 
 It will read input parameters and pass them to the training module.
 
@@ -114,7 +114,8 @@ from shutil import copyfile
 with open("/batchx/input/input.json", "r") as input_file:
     input_json = json.loads(input_file.read())
 
-# Generated files must be located below '/batchx/output/' folder. This folder has been automatically created by BatchX
+# Generated files must be located below '/batchx/output/' folder
+# This folder has been automatically created by BatchX
 output_folder = "/batchx/output/"
 
 # The train method needs:
@@ -131,7 +132,7 @@ with open('/batchx/output/output.json', 'w+') as output_file:
                'predictor_file_path': os.path.join(output_folder, 'predictor.py')}, output_file)
 ```
 
-3. trainer.py : python module to train the model
+3. **trainer.py** : python module to train the model
 
 ```python
 import tensorflow as tf
@@ -249,13 +250,13 @@ $ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_la
 And then copy them to BatchX file system:
 
 ```bash
-$ bx cp training_* bx://data/
+$ bx cp training_* bx://data
 ```
 
 And
 
 ```bash
-$ bx cp testing_* bx://data/
+$ bx cp testing_* bx://data
 ```
 
 Please note that downloading these files is not required, as you could instead set URLs as parameters when running the BatchX image. 
@@ -295,7 +296,7 @@ If everything went ok, you should see something like:
 {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
 ```
 
-# 5. Get results
+# 5. Get the trained model from BatchX file system and use it to classify a photo
 
 Copy model binary file from BatchX to your local filesystem:
 
@@ -317,14 +318,12 @@ You can test the model by downloading an input image:
 $ wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/test/trousers.png'
 ```
 
-Input image:
-
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png"
      alt="Training image"/>
 
-And then running the predictor.py script, supposing you have a Python environment with Tensorflow > 2.0.
+And then running the predictor.py script, for which you need a Python environment with Tensorflow > 2.0.
 
-The script will read the generated model (it must be located in the same folder) and return a prediction:
+The script will read the generated model file (it must be located in the same folder) and return a prediction:
 
 ```bash
 $ python predictor.py trousers.png
