@@ -15,7 +15,7 @@ In this tutorial you'll learn how to:
 
 # 1. Docker image creation
 
-We'll create three files: 
+We'll have to write three files: 
 
 1. Dockerfile : Docker image definition
 
@@ -100,7 +100,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 
 2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
 
-It will read input parameters and pass them to training module.
+It will read input parameters and pass them to the training module.
 
 ```
 import json
@@ -196,7 +196,7 @@ def train(input_json, output_folder):
     return model_file_path, meta_file_path
 ```
 
-Build the image:
+Now we can build the Docker image:
 
 > docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
 
@@ -224,9 +224,9 @@ There should be an image named: tutorial/tensorflow-gpu-demo:1.0.0
 
 Our dataset consists of 4 files:
 
-- training_images.zip: A file with 60000 images. It will be used for training. Each image is named with a number: 0.png, 1.png, etc.
+- training_images.zip: A file with 60000 png images. It will be used for training. Each image is named with a number: 0.png, 1.png, etc.
 - testing_labels.csv: A file with 60000 labels (column "label"). Label in row 0 provides 0.png image type, etc. 
-- testing_images.zip: A file with 10000 images. It will be used for testing. Each image is named with a number: 0.png, 1.png, etc.
+- testing_images.zip: A file with 10000 png images. It will be used for testing. Each image is named with a number: 0.png, 1.png, etc.
 - testing_labels.zip: A file with 10000 labels (column "label"). Label in row 0 provides 0.png image type, etc. 
 
 You can download them to your local folder:
@@ -241,8 +241,19 @@ And then copy them to BatchX file system:
 > bx cp training_* bx://data/
 > bx cp testing_* bx://data/
 
-Please note: downloading is not required, as you could instead set URLs as parameters when running the BatchX image. 
+Please note that downloading is not required, as you could instead set URLs as parameters when running the BatchX image. 
+
 That way BatchX would take care of downloading files and make them available for the image.
+
+But downloading the data you'll be able to have a look at it and see what we're dealing with. 
+
+As for instance, if you extract a png file from training_images.zip you'll see something like:
+
+TODO: put images here
+
+<img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/0.png"
+     alt="Training image"
+     style="width=56 height=56"/>
 
 # 4. Run your BatchX image
 
