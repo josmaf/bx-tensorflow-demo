@@ -19,7 +19,7 @@ We'll have to write three files:
 
 1. Dockerfile : Docker image definition
 
-```
+```text
 FROM tensorflow/tensorflow:latest-gpu-py3
 WORKDIR /batchx
 COPY . .
@@ -102,7 +102,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 
 It will read input parameters and pass them to the training module.
 
-```
+```python
 import json
 import os
 import trainer  # Module with our code to train a neural network
@@ -133,7 +133,7 @@ with open('/batchx/output/output.json', 'w+') as output_file:
 
 3. trainer.py : python module to train the model
 
-```
+```python
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -198,13 +198,17 @@ def train(input_json, output_folder):
 
 Now we can build the Docker image:
 
-> docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
+```bash
+$ docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
+```
 
 Please note: you must change <docker_registry_username> by your Docker registry user name. 
 
 Push to your Docker registry:
 
-> docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
+```bash
+$ docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
+```
 
 Note: we're using a public registry, but a private one could be used instead.
 
@@ -212,11 +216,15 @@ Note: we're using a public registry, but a private one could be used instead.
 
 Import image:
 
-> bx import <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
+```bash
+$ bx import <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
+```
 
-See your imported image:
+In order to see your imported image:
 
-> bx images
+```bash
+$ bx images
+```
 
 There should be an image named: tutorial/tensorflow-gpu-demo:1.0.0
 
@@ -231,28 +239,32 @@ Our dataset consists of 4 files:
 
 You can download them to your local folder:
 
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_images.zip'
-
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_labels.csv'
-
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_images.zip'
-
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_labels.csv'
+```bash
+$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_images.zip'
+$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_labels.csv'
+$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_images.zip'
+$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_labels.csv'
+```
 
 And then copy them to BatchX file system:
 
-> bx cp training_* bx://data/
-> bx cp testing_* bx://data/
+```bash
+$ bx cp training_* bx://data/
+```
 
-Please note that downloading is not required, as you could instead set URLs as parameters when running the BatchX image. 
+And
+
+```bash
+$ bx cp testing_* bx://data/
+```
+
+Please note that downloading these files is not required, as you could instead set URLs as parameters when running the BatchX image. 
 
 That way BatchX would take care of downloading files and make them available for the image.
 
 But downloading the data you'll be able to have a look at it and see what we're dealing with. 
 
 As for instance, if you extract a png file from training_images.zip you'll see something like:
-
-TODO: put images here
 
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/0.png"
      alt="Training image"
@@ -266,7 +278,9 @@ Or
 
 # 4. Run your BatchX image
 
-> bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:1.0.0 '{ "training_images_path" : "bx://data/training_images.zip", "training_labels_path" : "bx://data/training_labels.csv", "testing_images_path" : "bx://data/testing_images.zip", "testing_labels_path" : "bx://data/testing_labels.csv", "num_epochs" : 10}'
+```bash
+$ bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:1.0.0 '{ "training_images_path" : "bx://data/training_images.zip", "training_labels_path" : "bx://data/training_labels.csv", "testing_images_path" : "bx://data/testing_images.zip", "testing_labels_path" : "bx://data/testing_labels.csv", "num_epochs" : 10}'
+```
 
 Parameters:
 - v=4     -> 4 vCPUs
@@ -276,25 +290,32 @@ Parameters:
 
 If everything went ok, you should see something like:
 
-> [batchx] [2020/06/10 15:24:59] Job status: SUCCEEDED
-> {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
+```bash
+[batchx] [2020/06/10 15:24:59] Job status: SUCCEEDED
+{"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
+```
 
 # 5. Get results
 
 Copy model binary file from BatchX to your local filesystem:
 
-> bx cp bx://jobs/<job_id>/output/model.h5 .
+```bash
+$ bx cp bx://jobs/<job_id>/output/model.h5 .
+```
 
 Please note you must set the correct value of <job_id>.
 
-Copy model meta-data file and predictor.py script:
+Copy predictor.py script:
 
-> bx cp bx://jobs/<job_id>/output/model.info .
-> bx cp bx://jobs/<job_id>/output/predictor.py .
+```bash
+$ bx cp bx://jobs/<job_id>/output/predictor.py .
+```
 
 You can test the model by downloading an input image:
 
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png'
+```bash
+$ wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/test/trousers.png'
+```
 
 Input image:
 
@@ -305,4 +326,7 @@ And then running the predictor.py script, supposing you have a Python environmen
 
 The script will read the generated model (it must be located in the same folder) and return a prediction:
 
-> python predictor.py trousers.png
+```bash
+$ python predictor.py trousers.png
+RESULT: Trouser
+```
