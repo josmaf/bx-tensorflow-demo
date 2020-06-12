@@ -11,11 +11,29 @@ LABEL 'io.batchx.manifest-03'='{ \
 			"$schema":"http://json-schema.org/draft-07/schema#", \
 			"type":"object", \
 			"properties":{ \
-				"data_file_path":{ \
+				"training_images_path":{ \
 					"type":"string", \
 					"required":true, \
 					"format":"file", \
-					"description":"Input data file path" \
+					"description":"Zip file with training images" \
+					}, \
+                "training_labels_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Csv file with training labels" \
+					}, \
+				"testing_images_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Zip file with testing images" \
+					}, \
+                "testing_labels_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Csv file with testing labels" \
 					}, \
 				"num_epochs":{ \
 					"type":"integer", \
@@ -51,9 +69,8 @@ LABEL 'io.batchx.manifest-03'='{ \
 			} \
 		}, \
 	"author":"BatchX", \
-	"version":"0.0.5", \
+	"version":"0.0.6", \
 	"runtime":{"minMem":8000, \
 				"gpus":"required" \
 			} \
 	}'
-

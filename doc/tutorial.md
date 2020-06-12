@@ -3,9 +3,10 @@
 In this tutorial you'll learn how to:
 
 1. Create a Docker image to train a neural network that classifies images of clothing
-2. Import the image and a dataset of training data (labeled clothing photos) into BatchX
-3. Run your BatchX image
-4. Get results
+2. Import the Docker image into BatchX 
+3. Import a dataset of labeled clothing photos into BatchX
+4. Run your BatchX image (namely, the Docker image you've already imported in step 2)
+5. Get results
 
 # Prerequisites
 
@@ -32,11 +33,29 @@ LABEL 'io.batchx.manifest-03'='{ \
 			"$schema":"http://json-schema.org/draft-07/schema#", \
 			"type":"object", \
 			"properties":{ \
-				"data_file_path":{ \
+				"training_images_path":{ \
 					"type":"string", \
 					"required":true, \
 					"format":"file", \
-					"description":"Input data file path" \
+					"description":"Zip file with training images" \
+					}, \
+                "training_labels_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Csv file with training labels" \
+					}, \
+				"testing_images_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Zip file with testing images" \
+					}, \
+                "testing_labels_path":{ \
+					"type":"string", \
+					"required":true, \
+					"format":"file", \
+					"description":"Csv file with testing labels" \
 					}, \
 				"num_epochs":{ \
 					"type":"integer", \
@@ -79,10 +98,9 @@ LABEL 'io.batchx.manifest-03'='{ \
 	}'
 ```
 
-
 2. entrypoint.py : script to act as a 'bridge' between BatchX and the 'trainer.py' script in charge of training the model
 
-It will read input parameters and pass them to trainer module.
+It will read input parameters and pass them to training module.
 
 ```
 import json
@@ -92,55 +110,56 @@ from shutil import copyfile
 
 
 # BatchX saves into /batchx/input/input.json what we passed to bx client when running the job
-# So now we have to read input.json file to get the input parameters
+# So now we have to read input.json file to get a dictionary with the input parameters
 with open("/batchx/input/input.json", "r") as input_file:
-    input_json_dict = json.loads(input_file.read()) 
+    input_json = json.loads(input_file.read())
 
-# Get input data file local path
-input_file_path = input_json_dict["data_file_path"]  
-
-# Get number of epochs
-num_epochs = input_json_dict["num_epochs"]
-
-# Generated files must be located somewhere below '/batchx/output/' folder
-# This folder has been automatically created by BatchX
+# Generated files must be located below '/batchx/output/' folder. This folder has been automatically created by BatchX
 output_folder = "/batchx/output/"
 
 # The train method needs:
-#     input_data_file: path of training data file
-#     num_epochs: number of epochs (iterations)
+#     input_json_dict: a dictionary with the input parameters
 #     output_folder: path of the folder where model and meta-data files will be saved
-# It will return the paths of generated model and meta-data files
-model_file_path, meta_file_path = trainer.train(input_file_path, num_epochs, output_folder)
+model_file_path, meta_file_path = trainer.train(input_json, output_folder)
 
 # Additionally, we copy a script to use the trained model
-copyfile('/batchx/predictor.py', os.path.join(output_folder, 'predictor.py'))
+copyfile('predictor.py', os.path.join(output_folder, 'predictor.py'))
 
 # Write model and meta-data file paths into 'output.json'. BatchX will copy them into its FS. 
 with open('/batchx/output/output.json', 'w+') as output_file:
-    json.dump({'model_file_path': model_file_path, 
-    	'meta_file_path' : meta_file_path, 
-    	'predictor_file_path' : os.path.join(output_folder, 'predictor.py')  }, output_file)
+    json.dump({'model_file_path': model_file_path, 'meta_file_path': meta_file_path,
+               'predictor_file_path': os.path.join(output_folder, 'predictor.py')}, output_file)
 ```
 
-3. trainer.py : script to train the model
+3. trainer.py : python module to train the model
 
 ```
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import json
-import os.path
+import os
+import zipfile
+import imageio
+import pandas as pd
 
 
-def train(input_file_path, num_epochs, output_folder):
+def read_zipped_images(zip_file_path):
+    """Returns a numpy array representing all the images in a zip file."""
+    zip_file = zipfile.ZipFile(zip_file_path)
+    images_array = [imageio.imread(zip_file.read('{}.png'.format(i)))
+                    for i in range(0, len(zip_file.namelist()))]
+    return np.rollaxis(np.dstack(images_array), -1)
 
+
+def train(input_json, output_folder):
+    """Create a new model and returns h5 model and metadata files."""
+    
     # Read data
-    data = np.load(input_file_path, allow_pickle=True)
-    train_images = data['x_train']
-    train_labels =data['y_train']
-    test_images = data['x_test']
-    test_labels = data['y_test']
+    train_images = read_zipped_images(input_json['training_images_path'])
+    train_labels = np.array(pd.read_csv(input_json['training_labels_path']).iloc[:, 0])
+    test_images = read_zipped_images(input_json['testing_images_path'])
+    test_labels = np.array(pd.read_csv(input_json['testing_labels_path']).iloc[:, 0])
 
     # Pre-process data
     train_images = train_images / 255.0
@@ -151,16 +170,16 @@ def train(input_file_path, num_epochs, output_folder):
 
         # Build the model
         model = keras.Sequential([
-            keras.layers.Dense(32, input_shape=(784,)),
-            keras.layers.Dense(256, activation='relu'),
+            keras.layers.Flatten(input_shape=(28, 28)),
+            keras.layers.Dense(128, activation='relu'),
             keras.layers.Dense(10)])
 
         # Compile the model
         model.compile(optimizer='adam',
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
         # Train the model
-        model.fit(train_images, train_labels, epochs=num_epochs)
+        model.fit(train_images, train_labels, epochs=input_json['num_epochs'])
 
         # Evaluate model
         test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
@@ -177,9 +196,9 @@ def train(input_file_path, num_epochs, output_folder):
     return model_file_path, meta_file_path
 ```
 
-Build image:
+Build the image:
 
-> docker build -f ./Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
+> docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
 
 Please note: you must change <docker_registry_username> by your Docker registry user name. 
 
@@ -189,7 +208,7 @@ Push to your Docker registry:
 
 Note: we're using a public registry, but a private one could be used instead.
 
-# 2. Import to BatchX all you need: Docker image & Data
+# 2. Import the Docker image into BatchX
 
 Import image:
 
@@ -201,42 +220,64 @@ See your imported image:
 
 There should be an image named: tutorial/tensorflow-gpu-demo:1.0.0
 
-Download data:
+# 3. Import a dataset of labeled clothing photos into BatchX
 
-> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/fashion_mnist.npz'
+Our dataset consists of 4 files:
 
-Copy data to BatchX file system:
+- training_images.zip: A file with 60000 images. It will be used for training. Each image is named with a number: 0.png, 1.png, etc.
+- testing_labels.csv: A file with 60000 labels (column "label"). Label in row 0 provides 0.png image type, etc. 
+- testing_images.zip: A file with 10000 images. It will be used for testing. Each image is named with a number: 0.png, 1.png, etc.
+- testing_labels.zip: A file with 10000 labels (column "label"). Label in row 0 provides 0.png image type, etc. 
 
-> bx cp fashion_mnist.npz bx://data/fashion_mnist/mnist.npz
+You can download them to your local folder:
 
-# 3. Run your BatchX image
+> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_images.zip'
+> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_labels.csv'
+> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_images.zip'
+> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_labels.csv'
 
-> bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:0.0.2 '{"data_file_path":"bx://data/fashion_mnist.npz","num_epochs": 10}'
+And then copy them to BatchX file system:
+
+> bx cp training_* bx://data/
+> bx cp testing_* bx://data/
+
+Please note: downloading is not required, as you could instead set URLs as parameters when running the BatchX image. 
+That way BatchX would take care of downloading files and make them available for the image.
+
+# 4. Run your BatchX image
+
+> bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:1.0.0 '{ "training_images_path" : "bx://data/training_images.zip", "training_labels_path" : "bx://data/training_labels.csv", "testing_images_path" : "bx://data/testing_images.zip", "testing_labels_path" : "bx://data/testing_labels.csv", "num_epochs" : 10}'
 
 Parameters:
 - v=4     -> 4 vCPUs
-- m=15000 -> 15 GB of RAM
+- m=15000 -> At least 15 GB of RAM
 - g=1     -> At least 1 GPU
-- f=T4    -> GPU type
+- f=T4    -> GPU type (https://www.nvidia.com/en-gb/data-center/tesla-t4/)
 
 If everything went ok, you should see something like:
 
 > [batchx] [2020/06/10 15:24:59] Job status: SUCCEEDED
 > {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
 
-
-# 4. Get results
+# 5. Get results
 
 Copy model binary file from BatchX to your local filesystem:
 
-> bx cp bx://jobs/127/output/model.h5 .
+> bx cp bx://jobs/<job_id>/output/model.h5 .
+
+Please note you must set the correct value of <job_id>.
 
 Copy model meta-data file and predictor.py script:
 
-> bx cp bx://jobs/127/output/model.info .
-> bx cp bx://jobs/127/output/predictor.py .
+> bx cp bx://jobs/<job_id>/output/model.info .
+> bx cp bx://jobs/<job_id>/output/predictor.py .
 
-You can test the model by downloading an input image and trying predictor.py script along with the generated model:
+You can test the model by downloading an input image:
 
-TODO
+> wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png'
 
+And then running the predictor.py script, supposing you have a Python environment with Tensorflow > 2.0.
+
+The script will read the generated model (it must be located in the same folder) and return a prediction:
+
+> python predictor.py trousers.png

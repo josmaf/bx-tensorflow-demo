@@ -2,17 +2,28 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import json
-import os.path
+import os
+import zipfile
+import imageio
+import pandas as pd
 
 
-def train(input_file_path, num_epochs, output_folder):
+def read_zipped_images(zip_file_path):
+    """Returns a numpy array representing all the images in a zip file."""
+    zip_file = zipfile.ZipFile(zip_file_path)
+    images_array = [imageio.imread(zip_file.read('{}.png'.format(i)))
+                    for i in range(0, len(zip_file.namelist()))]
+    return np.rollaxis(np.dstack(images_array), -1)
 
+
+def train(input_json, output_folder):
+    """Create a new model and returns h5 model and metadata files."""
+    
     # Read data
-    data = np.load(input_file_path, allow_pickle=True)
-    train_images = data['x_train']
-    train_labels =data['y_train']
-    test_images = data['x_test']
-    test_labels = data['y_test']
+    train_images = read_zipped_images(input_json['training_images_path'])
+    train_labels = np.array(pd.read_csv(input_json['training_labels_path']).iloc[:, 0])
+    test_images = read_zipped_images(input_json['testing_images_path'])
+    test_labels = np.array(pd.read_csv(input_json['testing_labels_path']).iloc[:, 0])
 
     # Pre-process data
     train_images = train_images / 255.0
@@ -23,16 +34,16 @@ def train(input_file_path, num_epochs, output_folder):
 
         # Build the model
         model = keras.Sequential([
-            keras.layers.Dense(32, input_shape=(784,)),
-            keras.layers.Dense(256, activation='relu'),
+            keras.layers.Flatten(input_shape=(28, 28)),
+            keras.layers.Dense(128, activation='relu'),
             keras.layers.Dense(10)])
 
         # Compile the model
         model.compile(optimizer='adam',
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
         # Train the model
-        model.fit(train_images, train_labels, epochs=num_epochs)
+        model.fit(train_images, train_labels, epochs=input_json['num_epochs'])
 
         # Evaluate model
         test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
@@ -47,7 +58,3 @@ def train(input_file_path, num_epochs, output_folder):
             json.dump({'test loss': str(test_loss), 'test accuracy': str(test_acc)}, output_file)
 
     return model_file_path, meta_file_path
-
-
-if __name__ == '__main__':
-    train('/home/jose.fernandez/projects/batchx/demo-tensorflow-gpu/fashion_mnist.npz', 10, '.')
