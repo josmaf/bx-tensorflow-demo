@@ -12,10 +12,13 @@ with open("/batchx/input/input.json", "r") as input_file:
 # Generated files must be located below '/batchx/output/' folder. This folder has been automatically created by BatchX
 output_folder = "/batchx/output/"
 
-# The train method needs:
-#     input_json_dict: a dictionary with the input parameters
-#     output_folder: path of the folder where model and meta-data files will be saved
-model_file_path, meta_file_path = trainer.train(input_json, output_folder)
+# Train the model and get the path of the generated model file and a meta-data info file
+model_file_path, meta_file_path = trainer.train(train_images_path=input_json['training_images_path'],
+                                                train_labels_path=input_json['training_labels_path'],
+                                                test_images_path=input_json['testing_images_path'],
+                                                test_labels_path=input_json['testing_labels_path'],
+                                                num_epochs=input_json['num_epochs'],
+                                                output_folder=output_folder)
 
 # Additionally, we copy a script to use the trained model
 copyfile('predictor.py', os.path.join(output_folder, 'predictor.py'))

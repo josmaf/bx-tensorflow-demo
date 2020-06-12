@@ -1,23 +1,32 @@
 # Intro
 
-In this tutorial you'll learn how to:
+In this tutorial you will learn how to:
 
-1. Create a Docker image to train a neural network that classifies photos of clothing
+1. Create a Docker image to train a model (a neural network) that classifies photos of clothing
 2. Import the Docker image into BatchX 
 3. Import a dataset of labeled clothing photos into BatchX
-4. Run your BatchX image (namely, the Docker image you've already imported in step 2)
+4. Run the Docker image in BatchX
 5. Get the trained model from BatchX file system and use it to classify a photo
 
 # Prerequisites
 
-- BatchX client and a BatchX working account
-- Docker client and a public Docker registry account. For instance, https://hub.docker.com/
+- BatchX: you need to install the client and configure your account, as explained in https://docs.batchx.io/batchx-cli/installation
+- Docker: you need to install Docker (https://docs.docker.com/get-docker/) and a Docker registry account (https://hub.docker.com/).  
+Why? Because as of today BatchX only allows to import images which are hosted in a cloud-based repository service, as hub.docker.com. 
+- Python & TensorFlow: it's only necessary if you want to use the trained model
 
 # 1. Docker image creation
 
-We'll have to write three files: 
+Ok, let's do this. You need a working directory to put the files you are about to create. Directory name is not important.
+
+We'll have to write four files: 
 
 1. **Dockerfile** : Docker image definition
+
+In summary, among other things it tells Docker:
+ - Where to download a base image in top of which we're going to stack our code
+ - First script (entrypoint) to execute when running the image (well, not exactly)
+ - BatchX manifest: input, output, etc.
 
 ```text
 FROM tensorflow/tensorflow:latest-gpu-py3
@@ -197,13 +206,62 @@ def train(input_json, output_folder):
     return model_file_path, meta_file_path
 ```
 
+4. **predictor.py** : Python script to use the trained model and make predictions
+
+```python
+import os
+import sys
+import numpy as np
+from PIL import Image
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Set before importing tf
+import tensorflow as tf
+from tensorflow import keras
+
+labels = {0: 'T-shirt/top',
+          1: 'Trouser',
+          2: 'Pullover',
+          3: 'Dress',
+          4: 'Coat',
+          5: 'Sandal',
+          6: 'Shirt',
+          7: 'Sneaker',
+          8: 'Bag',
+          9: 'Ankle boot'}
+
+
+def convert_image_to_array(image_path):
+    img = Image.open(image_path).convert('L').resize((28, 28), Image.ANTIALIAS)
+    return np.array([np.array(img) / 255.0])
+
+
+def predict(image_path):
+    # Load model
+    model = keras.models.load_model("model.h5")
+    # Compile the model
+    model.compile(optimizer='adam',
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
+    # Predict
+    img_array = convert_image_to_array(image_path)
+    predicted_class = model.predict_classes(img_array)
+
+    return labels[predicted_class[0]]
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Please enter an image file path")
+        exit()
+    label = predict(sys.argv[1])
+    print("RESULT: {}".format(label))
+```
+
 Now we can build the Docker image:
 
 ```bash
 $ docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
 ```
 
-Please note: you must change <docker_registry_username> by your Docker registry user name. 
+Please note that you must change <docker_registry_username> by your Docker registry user name. 
 
 Push to your Docker registry:
 
@@ -211,7 +269,7 @@ Push to your Docker registry:
 $ docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
 ```
 
-Note: we're using a public registry, but a private one could be used instead.
+We're using a public registry for simplicity, but a private one could be used instead.
 
 # 2. Import the Docker image into BatchX
 
@@ -253,7 +311,7 @@ And then copy them to BatchX file system:
 $ bx cp training_* bx://data
 ```
 
-And
+And...
 
 ```bash
 $ bx cp testing_* bx://data
@@ -321,7 +379,7 @@ $ wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/test/
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png"
      alt="Training image"/>
 
-And then running the predictor.py script, for which you need a Python environment with Tensorflow > 2.0.
+And then running the predictor.py script, for which you need a Python environment with TensorFlow > 2.0.
 
 The script will read the generated model file (it must be located in the same folder) and return a prediction:
 
