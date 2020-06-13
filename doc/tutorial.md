@@ -123,14 +123,16 @@ from shutil import copyfile
 with open("/batchx/input/input.json", "r") as input_file:
     input_json = json.loads(input_file.read())
 
-# Generated files must be located below '/batchx/output/' folder
-# This folder has been automatically created by BatchX
+# Generated files must be located below '/batchx/output/' folder. This folder has been automatically created by BatchX
 output_folder = "/batchx/output/"
 
-# The train method needs:
-#     input_json_dict: a dictionary with the input parameters
-#     output_folder: path of the folder where model and meta-data files will be saved
-model_file_path, meta_file_path = trainer.train(input_json, output_folder)
+# Train the model and get the path of the generated model file and a meta-data info file
+model_file_path, meta_file_path = trainer.train(train_images_path=input_json['training_images_path'],
+                                                train_labels_path=input_json['training_labels_path'],
+                                                test_images_path=input_json['testing_images_path'],
+                                                test_labels_path=input_json['testing_labels_path'],
+                                                num_epochs=input_json['num_epochs'],
+                                                output_folder=output_folder)
 
 # Additionally, we copy a script to use the trained model
 copyfile('predictor.py', os.path.join(output_folder, 'predictor.py'))
@@ -162,46 +164,48 @@ def read_zipped_images(zip_file_path):
     return np.rollaxis(np.dstack(images_array), -1)
 
 
-def train(input_json, output_folder):
+def train(train_images_path, train_labels_path, test_images_path, test_labels_path, num_epochs, output_folder):
     """Create a new model and returns h5 model and metadata files."""
     
     # Read data
-    train_images = read_zipped_images(input_json['training_images_path'])
-    train_labels = np.array(pd.read_csv(input_json['training_labels_path']).iloc[:, 0])
-    test_images = read_zipped_images(input_json['testing_images_path'])
-    test_labels = np.array(pd.read_csv(input_json['testing_labels_path']).iloc[:, 0])
+    train_images = read_zipped_images(train_images_path)
+    train_labels = np.array(pd.read_csv(train_labels_path).iloc[:, 0])
+    test_images = read_zipped_images(test_images_path)
+    test_labels = np.array(pd.read_csv(test_labels_path).iloc[:, 0])
 
     # Pre-process data
     train_images = train_images / 255.0
     test_images = test_images / 255.0
 
-    # Force using first GPU device
-    with tf.device('/gpu:0'):
+    # Create a MirroredStrategy.
+    strategy = tf.distribute.MirroredStrategy()
+    print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
+    # Use all GPU devices
+    with strategy.scope():
         # Build the model
         model = keras.Sequential([
             keras.layers.Flatten(input_shape=(28, 28)),
             keras.layers.Dense(128, activation='relu'),
             keras.layers.Dense(10)])
-
         # Compile the model
         model.compile(optimizer='adam',
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
-        # Train the model
-        model.fit(train_images, train_labels, epochs=input_json['num_epochs'])
+    # Train the model
+    model.fit(train_images, train_labels, epochs=num_epochs)
 
-        # Evaluate model
-        test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
+    # Evaluate model
+    test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
 
-        # Save model
-        model_file_path = os.path.join(output_folder, 'model.h5')
-        model.save(model_file_path)
+    # Save model
+    model_file_path = os.path.join(output_folder, 'model.h5')
+    model.save(model_file_path)
 
-        # Save meta-data
-        meta_file_path = os.path.join(output_folder, 'model.info')
-        with open(meta_file_path, 'w+') as output_file:
-            json.dump({'test loss': str(test_loss), 'test accuracy': str(test_acc)}, output_file)
+    # Save meta-data
+    meta_file_path = os.path.join(output_folder, 'model.info')
+    with open(meta_file_path, 'w+') as output_file:
+        json.dump({'test loss': str(test_loss), 'test accuracy': str(test_acc)}, output_file)
 
     return model_file_path, meta_file_path
 ```
