@@ -5,7 +5,7 @@ In this tutorial you will learn how to:
 1. Create a Docker image to train a model (a neural network) that classifies photos of clothing
 2. Import the Docker image into BatchX 
 3. Import a dataset of labeled clothing photos into BatchX
-4. Run the Docker image in BatchX
+4. Run the imported Docker image in BatchX
 5. Get the trained model from BatchX file system and use it to classify a photo
 
 # Prerequisites
@@ -13,7 +13,7 @@ In this tutorial you will learn how to:
 - BatchX: you need to install the client and configure your account, as explained in https://docs.batchx.io/batchx-cli/installation
 - Docker: you need to install Docker (https://docs.docker.com/get-docker/) and a Docker registry account (https://hub.docker.com/).  
 Why? Because as of today BatchX only allows to import images which are hosted in a cloud-based repository service, as hub.docker.com. 
-- Python & TensorFlow: it's only necessary if you want to use the trained model
+- Python & TensorFlow: only necessary if you want to use the trained model
 
 # 1. Docker image creation
 
@@ -25,8 +25,8 @@ We'll have to write four files:
 
 In summary, among other things it tells Docker:
  - Where to download a base image in top of which we're going to stack our code
- - First script (entrypoint) to execute when running the image (well, not exactly)
- - BatchX manifest: input, output, etc.
+ - First script (entrypoint) to execute when running the image 
+ - BatchX manifest: it's in the LABEL field and it contains some info BatchX needs to process the Docker image
 
 ```text
 FROM tensorflow/tensorflow:latest-gpu-py3
@@ -42,7 +42,7 @@ LABEL 'io.batchx.manifest-03'='{ \
 			"$schema":"http://json-schema.org/draft-07/schema#", \
 			"type":"object", \
 			"properties":{ \
-				"training_images_path":{ \
+                "training_images_path":{ \
 					"type":"string", \
 					"required":true, \
 					"format":"file", \
@@ -54,19 +54,19 @@ LABEL 'io.batchx.manifest-03'='{ \
 					"format":"file", \
 					"description":"Csv file with training labels" \
 					}, \
-				"testing_images_path":{ \
+			    "testing_images_path":{ \
 					"type":"string", \
 					"required":true, \
 					"format":"file", \
 					"description":"Zip file with testing images" \
 					}, \
-                "testing_labels_path":{ \
+			    "testing_labels_path":{ \
 					"type":"string", \
 					"required":true, \
 					"format":"file", \
 					"description":"Csv file with testing labels" \
 					}, \
-				"num_epochs":{ \
+			    "num_epochs":{ \
 					"type":"integer", \
 					"required":true, \
 					"description":"Number of epochs" \
@@ -269,7 +269,7 @@ Push to your Docker registry:
 $ docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
 ```
 
-We're using a public registry for simplicity, but a private one could be used instead.
+We're using a public repository for simplicity, but a private one could be used instead as long as it's reachable from the Internet.
 
 # 2. Import the Docker image into BatchX
 
@@ -299,10 +299,10 @@ Our dataset consists of 4 files:
 You can download them to your local folder:
 
 ```bash
-$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_images.zip'
-$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/training_labels.csv'
-$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_images.zip'
-$ wget 'https://github.com/josmaf/bx-tensorflow-demo/blob/master/data/testing_labels.csv'
+$ wget 'https://github.com/josmaf/bx-tensorflow-demo/raw/master/data/training_images.zip'; \
+wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/data/training_labels.csv'; \
+wget 'https://github.com/josmaf/bx-tensorflow-demo/raw/master/data/testing_images.zip'; \
+wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/data/testing_labels.csv'
 ```
 
 And then copy them to BatchX file system:
