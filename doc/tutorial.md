@@ -1,6 +1,26 @@
 # Intro
 
-In this tutorial you will learn how to:
+What is BatchX for?
+
+In the past few months I have heard this question several times.
+
+The answer is simple: a platform to run **software** processing **data** on the right **hardware**, on demand.
+
+It sounds easy, but...
+
+- Software: your software needs other software and somehow everything should be packaged so that portability is not an issue.
+- Data: usually, your software reads some data and writes more data as a result. And you want to be sure about a lot of stuff: Is my data kept safe? Is it available? Is it known what input data corresponds to what output?
+- Hardware: sometimes hardware makes the difference. Do you need a machine with multiple GPUs to process different batches of data in parallel? And if so, do machine GPUs have enough memory to handle your workloads?
+
+BatchX offers a single cloud solution to simplify dealing with these issues in one shot, so that you can focus on what really matters: your code.
+
+But let's see it in action. 
+
+Suppose you want to train a neural network to be able to identify a specific type of images. 
+
+We'll use the fashion-MINST dataset provided by Zalando (https://github.com/zalandoresearch/fashion-mnist) and Python. 
+
+In this guide you will learn how to:
 
 1. Create a Docker image to train a model (a neural network) that classifies photos of clothing
 2. Import the Docker image into BatchX 
@@ -13,7 +33,7 @@ In this tutorial you will learn how to:
 - BatchX: you need to install the client and configure your account, as explained in https://docs.batchx.io/batchx-cli/installation
 - Docker: you need to install Docker (https://docs.docker.com/get-docker/) and a Docker registry account (https://hub.docker.com/).  
 Why? Because as of today BatchX only allows to import images which are hosted in a cloud-based repository service, as hub.docker.com. 
-- Python & TensorFlow: only necessary if you want to use the trained model
+- Python & TensorFlow local installations: only necessary if you want to use the trained model
 
 # 1. Docker image creation
 
@@ -23,10 +43,10 @@ We'll have to write four files:
 
 1. **Dockerfile** : Docker image definition
 
-In summary, among other things it tells Docker:
+In short, among other things it tells Docker:
  - Where to download a base image in top of which we're going to stack our code
  - First script (entrypoint) to execute when running the image 
- - BatchX manifest: it's in the LABEL field and it contains some info BatchX needs to process the Docker image
+ - BatchX manifest: it's in the LABEL field and it contains some info BatchX needs to process the Docker image, as the input and output data
 
 ```text
 FROM tensorflow/tensorflow:latest-gpu-py3
@@ -118,7 +138,7 @@ import trainer  # Module with our code to train a neural network
 from shutil import copyfile
 
 
-# BatchX saves into /batchx/input/input.json what we passed to bx client when running the job
+# BatchX saves what we passed to bx client into /batchx/input/input.json when running the job
 # So now we have to read input.json file to get a dictionary with the input parameters
 with open("/batchx/input/input.json", "r") as input_file:
     input_json = json.loads(input_file.read())
@@ -137,7 +157,7 @@ model_file_path, meta_file_path = trainer.train(train_images_path=input_json['tr
 # Additionally, we copy a script to use the trained model
 copyfile('predictor.py', os.path.join(output_folder, 'predictor.py'))
 
-# Write model and meta-data file paths into 'output.json'. BatchX will copy them into its FS. 
+# Write model, meta-data and predictor script file paths into 'output.json'. BatchX will copy them into its file system 
 with open('/batchx/output/output.json', 'w+') as output_file:
     json.dump({'model_file_path': model_file_path, 'meta_file_path': meta_file_path,
                'predictor_file_path': os.path.join(output_folder, 'predictor.py')}, output_file)
