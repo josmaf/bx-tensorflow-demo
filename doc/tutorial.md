@@ -12,21 +12,22 @@ It sounds easy, but...
 - Data: usually, your software reads some data and writes more data as a result. And you want to be sure about a lot of stuff: Is my data kept safe? Is it available? Is it known what input data corresponds to what output?
 - Hardware: sometimes hardware makes the difference. Do you need a machine with multiple GPUs to process different batches of data in parallel? And if so, do machine GPUs have enough memory to handle your workloads?
 
-BatchX offers a single cloud solution to simplify dealing with these issues in one shot, so that you can focus on what really matters: your code.
+BatchX offers a single cloud solution to simplify dealing with these issues, so that you can focus on what really matters: your code.
 
 But let's see it in action. 
 
 Suppose you want to train a neural network to be able to identify a specific type of images. 
 
-We'll use the fashion-MINST dataset provided by Zalando (https://github.com/zalandoresearch/fashion-mnist) and Python. 
+We'll use the fashion-MINST dataset provided by Zalando (https://github.com/zalandoresearch/fashion-mnist). 
 
 In this guide you will learn how to:
 
 1. Create a Docker image to train a model (a neural network) that classifies photos of clothing
 2. Import the Docker image into BatchX 
 3. Import a dataset of labeled clothing photos into BatchX
-4. Run the imported Docker image in BatchX
-5. Get the trained model from BatchX file system and use it to classify a photo
+4. Training a model by running the imported Docker image in BatchX
+
+Finally, you'll be able to get the trained model from BatchX file system and use it to classify a photo
 
 # Prerequisites
 
@@ -378,7 +379,7 @@ If everything went ok, you should see something like:
 {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
 ```
 
-# 5. Get the trained model from BatchX file system and use it to classify a photo
+# Get the trained model from BatchX file system and use it to classify a photo
 
 Copy model binary file from BatchX to your local filesystem:
 
