@@ -6,6 +6,7 @@ import os
 import zipfile
 import imageio
 import pandas as pd
+import pickle
 
 
 def read_zipped_images(zip_file_path):
@@ -21,9 +22,9 @@ def train(train_images_path, train_labels_path, test_images_path, test_labels_pa
     
     # Read data
     train_images = read_zipped_images(train_images_path)
-    train_labels = np.array(pd.read_csv(train_labels_path).iloc[:, 0])
+    train_labels = np.array(pd.read_csv(train_labels_path)['label'])
     test_images = read_zipped_images(test_images_path)
-    test_labels = np.array(pd.read_csv(test_labels_path).iloc[:, 0])
+    test_labels = np.array(pd.read_csv(test_labels_path)['label'])
 
     # Pre-process data
     train_images = train_images / 255.0
@@ -38,7 +39,7 @@ def train(train_images_path, train_labels_path, test_images_path, test_labels_pa
         # Build the model
         model = keras.Sequential([
             keras.layers.Flatten(input_shape=(28, 28)),
-            keras.layers.Dense(128, activation='relu'),
+            keras.layers.Dense(256, activation='relu'),
             keras.layers.Dense(10)])
         # Compile the model
         model.compile(optimizer='adam',
@@ -60,3 +61,16 @@ def train(train_images_path, train_labels_path, test_images_path, test_labels_pa
         json.dump({'test loss': str(test_loss), 'test accuracy': str(test_acc)}, output_file)
 
     return model_file_path, meta_file_path
+
+
+if __name__ == '__main__':
+    training_x = './data/training_images.zip'
+    training_y = './data/training_labels.csv'
+    test_x = './data/testing_images.zip'
+    test_y = './data/testing_labels.csv'
+    num_epochs = 6
+    output_folder = '.'
+    train(training_x, training_y, test_x, test_y, num_epochs, output_folder)
+
+
+

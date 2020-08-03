@@ -4,41 +4,45 @@ What is BatchX for?
 
 In the past few months I have heard this question several times.
 
-The answer is simple: a platform to run **software** processing **data** on the right **hardware**, on demand.
+The answer is simple: a platform to asynchronously run **software** processing **data** on the right **hardware** in a collaborative manner, on demand.
 
 It sounds easy, but...
 
-- Software: your software needs other software and somehow everything should be packaged so that portability is not an issue.
-- Data: usually, your software reads some data and writes more data as a result. And you want to be sure about a lot of stuff: Is my data kept safe? Is it available? Is it known what input data corresponds to what output?
-- Hardware: sometimes hardware makes the difference. Do you need a machine with multiple GPUs to process different batches of data in parallel? And if so, do machine GPUs have enough memory to handle your workloads?
+- Software: out software needs other software and somehow everything should be packaged so that portability and dependency management do not become a nightmare
+- Data: usually, out software reads some data and writes more data as a result. And we want to be sure about a lot of stuff: Is out data kept safe? Is it available for all members of the team? Is it known what input data corresponds to what output?
+- Hardware: sometimes hardware makes the difference. Do we need a machine with multiple GPUs to process different batches of data in parallel? And if so, do GPUs have enough memory to handle our workloads?
 
-BatchX offers a single cloud solution to simplify dealing with these issues, so that you can focus on what really matters: your code.
+BatchX offers a single cloud solution to simplify dealing with these issues, so that we can focus on what really matters: our code.
 
-But let's see it in action. 
+Well, our code or other's code. BatchX allows us to run "code packages" (being specific, Docker images) previously created by other people. 
 
-Suppose you want to train a neural network to be able to identify a specific type of images. 
+But in this 'toy example' we'll learn how to go from 'zero-to-hero': from creating our own Docker image to run it in BatchX and use the results.
 
-We'll use the fashion-MINST dataset provided by Zalando (https://github.com/zalandoresearch/fashion-mnist). 
+So, let's do this. Everything starts with someone wanting to do something: suppose we want to train a neural network to identify a specific type of images.
 
-In this guide you will learn how to:
+"Training" is nothing but running a program that needs a lot of data. 
 
-1. Create a Docker image to train a model (a neural network) that classifies photos of clothing
+In this technical guide we'll get there through 4 + 1 steps:
+
+1. Create a Docker image to train a model (a neural network) that classifies photos of clothing (Zalando's dataset, please see below)
 2. Import the Docker image into BatchX 
 3. Import a dataset of labeled clothing photos into BatchX
-4. Training a model by running the imported Docker image in BatchX
+4. Train a model by running the imported Docker image in BatchX
 
-Finally, you'll be able to get the trained model from BatchX file system and use it to classify a photo
+Finally, we'll be able to get the trained model from BatchX file system and use it to classify a photo.
+
+Please note: We'll use the fashion-MINST dataset provided by Zalando (https://github.com/zalandoresearch/fashion-mnist) as training data. 
 
 # Prerequisites
 
-- BatchX: you need to install the client and configure your account, as explained in https://docs.batchx.io/batchx-cli/installation
-- Docker: you need to install Docker (https://docs.docker.com/get-docker/) and a Docker registry account (https://hub.docker.com/).  
-Why? Because as of today BatchX only allows to import images which are hosted in a cloud-based repository service, as hub.docker.com. 
-- Python & TensorFlow local installations: only necessary if you want to use the trained model
+- BatchX: we need to install the client and configure our account, as explained in https://docs.batchx.io/batchx-cli/installation
+- Docker: we need to install Docker (https://docs.docker.com/get-docker/) and set up a Docker registry account (https://hub.docker.com/)
+Why? Because as of today BatchX only allows to import images which are hosted in a cloud-based repository service, as hub.docker.com
+- Python 3.6 & TensorFlow 2.x local installations: only necessary if we want to run the trained model in our local machine
 
 # 1. Docker image creation
 
-Ok, let's do this. You need a working directory to put the files you are about to create. Directory name is not important.
+Ok, let's do this. We need a working directory to put the files we are about to create. Directory name is not important.
 
 We'll have to write four files: 
 
@@ -286,9 +290,9 @@ Now we can build the Docker image:
 $ docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
 ```
 
-Please note that you must change <docker_registry_username> by your Docker registry user name. 
+Please note that we must change <docker_registry_username> by your Docker registry user name. 
 
-Push to your Docker registry:
+Push to our Docker registry:
 
 ```bash
 $ docker push <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
@@ -304,7 +308,7 @@ Import image:
 $ bx import <docker_registry_username>/batchx-tensorflow-gpu-demo:latest
 ```
 
-In order to see your imported image:
+In order to see our imported image:
 
 ```bash
 $ bx images
@@ -321,7 +325,7 @@ Our dataset consists of 4 files:
 - testing_images.zip: A file with 10000 png images. It will be used for testing. Each image is named with a number: 0.png, 1.png, etc.
 - testing_labels.zip: A file with 10000 labels (column "label"). Label in row 0 provides 0.png image type, etc. 
 
-You can download them to your local folder:
+We can download them to our local folder:
 
 ```bash
 $ wget 'https://github.com/josmaf/bx-tensorflow-demo/raw/master/data/training_images.zip'; \
@@ -342,13 +346,13 @@ And...
 $ bx cp testing_* bx://data
 ```
 
-Please note that downloading these files is not required, as you could instead set URLs as parameters when running the BatchX image. 
+Please note that downloading these files is not required, as we could instead set URLs as parameters when running the BatchX image. 
 
 That way BatchX would take care of downloading files and make them available for the image.
 
-But downloading the data you'll be able to have a look at it and see what we're dealing with. 
+But downloading the data we'll be able to have a look at it and see what we're dealing with. 
 
-As for instance, if you extract a png file from training_images.zip you'll see something like:
+As for instance, if we extract a png file from training_images.zip we'll see something like:
 
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/0.png"
      alt="Training image"
@@ -360,7 +364,9 @@ Or
      alt="Training image"
      style="width:72px; height:72px"/>
 
-# 4. Run your BatchX image
+# 4. Train a model by running the imported Docker image in BatchX
+
+Given that our image has already been imported into BatchX, we just have to run the following code:
 
 ```bash
 $ bx run -v=4 -m=15000 -g=1 -f=T4 tutorial/tensorflow-gpu-demo:1.0.0 '{ "training_images_path" : "bx://data/training_images.zip", "training_labels_path" : "bx://data/training_labels.csv", "testing_images_path" : "bx://data/testing_images.zip", "testing_labels_path" : "bx://data/testing_labels.csv", "num_epochs" : 10}'
@@ -372,16 +378,32 @@ Parameters:
 - g=1     -> At least 1 GPU
 - f=T4    -> GPU type (https://www.nvidia.com/en-gb/data-center/tesla-t4/)
 
-If everything went ok, you should see something like:
+If everything went ok, we should see something like:
 
 ```bash
 [batchx] [2020/06/10 15:24:59] Job status: SUCCEEDED
 {"model_file_path":"bx://jobs/127/output/model.h5","meta_file_path":"bx://jobs/127/output/model.info","predictor_file_path":"bx://jobs/127/output/predictor.py"}
 ```
 
+Ok, what do we have here? Exactly what we told BatchX in the manifest file to be returned as output. That is, a json file with three fields:
+
+- model_file_path: path of trained model in BatchX file system
+- meta_file_path: path of meta-info text file in BatchX file system
+- predictor_file_path: path in BatchX file system of Python script file able to run the trained model
+
+Every new job will have its own folder: bx://jobs/<job_id>, being <job_id> an auto-generated unique number for that job.
+
+At this point, anyone in our team (in case we use the same environment) can easily see past jobs as well as the input data and results of each execution.
+
 # Get the trained model from BatchX file system and use it to classify a photo
 
-Copy model binary file from BatchX to your local filesystem:
+A trained model by itself is just a binary file. 
+
+If we want to see it in action, we need a script, and a Python working environment (installation of which is beyond the scope of this tutorial: https://wiki.python.org/moin/BeginnersGuide/Download)
+
+The job we just executed provide us with both files: the trained model and the script.
+
+We first copy the model binary file from BatchX to our local filesystem:
 
 ```bash
 $ bx cp bx://jobs/<job_id>/output/model.h5 .
@@ -395,7 +417,7 @@ Copy predictor.py script:
 $ bx cp bx://jobs/<job_id>/output/predictor.py .
 ```
 
-You can test the model by downloading an input image:
+You can test the model by downloading an input image to a folder:
 
 ```bash
 $ wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/test/trousers.png'
@@ -404,11 +426,15 @@ $ wget 'https://raw.githubusercontent.com/josmaf/bx-tensorflow-demo/master/test/
 <img src="https://github.com/josmaf/bx-tensorflow-demo/blob/master/test/trousers.png"
      alt="Training image"/>
 
-And then running the predictor.py script, for which you need a Python environment with TensorFlow > 2.0.
+And then running the predictor.py script in the same folder, for which we need a Python environment with TensorFlow greater or equal than 2.0.
 
-The script will read the generated model file (it must be located in the same folder) and return a prediction:
+The script will read the generated model file and return a prediction:
 
 ```bash
 $ python predictor.py trousers.png
 RESULT: Trouser
 ```
+
+Of course, we could instead create a Docker image to run a BatchX job in charge of doing exactly this: download images from the internet, read the generated model and predict image types, so that we could create a pipeline composed by both jobs able to download and classify images on a massive scale.
+ 
+But that would be material for other post... Hope this helps you to better understand what BatchX is building! :-)
