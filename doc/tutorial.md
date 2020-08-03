@@ -8,9 +8,9 @@ The answer is simple: a platform to asynchronously run **software** processing *
 
 It sounds easy, but...
 
-- Software: out software needs other software and somehow everything should be packaged so that portability and dependency management do not become a nightmare
-- Data: usually, out software reads some data and writes more data as a result. And we want to be sure about a lot of stuff: Is out data kept safe? Is it available for all members of the team? Is it known what input data corresponds to what output?
-- Hardware: sometimes hardware makes the difference. Do we need a machine with multiple GPUs to process different batches of data in parallel? And if so, do GPUs have enough memory to handle our workloads?
+- **Software**: out software needs other software and somehow everything should be packaged so that portability and dependency management do not become a nightmare
+- **Data**: usually, our software reads some data and writes more data as a result. And we want to be sure about a lot of stuff: Is out data kept safe? Is it available for all members of the team? Is it known what input data corresponds to what output?
+- **Hardware**: sometimes hardware makes the difference. Do we need a machine with multiple GPUs to process different batches of data in parallel? And if so, do GPUs have enough memory to handle our workloads?
 
 BatchX offers a single cloud solution to simplify dealing with these issues, so that we can focus on what really matters: our code.
 
@@ -290,7 +290,7 @@ Now we can build the Docker image:
 $ docker build -f ./docker/Dockerfile -t <docker_registry_username>/batchx-tensorflow-gpu-demo:latest .
 ```
 
-Please note that we must change <docker_registry_username> by your Docker registry user name. 
+Please note that we must change <docker_registry_username> by our Docker registry user name. 
 
 Push to our Docker registry:
 
@@ -399,7 +399,7 @@ At this point, anyone in our team (in case we use the same environment) can easi
 
 A trained model by itself is just a binary file. 
 
-If we want to see it in action, we need a script, and a Python working environment (installation of which is beyond the scope of this tutorial: https://wiki.python.org/moin/BeginnersGuide/Download)
+If we want to see it in action, we need a script, and a Python working environment (in case you to install it: https://wiki.python.org/moin/BeginnersGuide/Download)
 
 The job we just executed provide us with both files: the trained model and the script.
 
